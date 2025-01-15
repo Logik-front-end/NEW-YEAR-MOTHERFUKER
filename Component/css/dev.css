@@ -1,0 +1,100 @@
+.dev-container {
+    padding-top: 80px;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #15253d, #19315c);
+    color: white;
+}
+
+.dev-container h1 {
+    text-align: center;
+    margin-bottom: 50px;
+    font-size: 2.5em;
+    color: #9bc1ff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.dev-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    padding: 0 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.dev-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.dev-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.dev-image {
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+}
+
+.dev-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.dev-card:hover .dev-image img {
+    transform: scale(1.1);
+}
+
+.dev-info {
+    padding: 20px;
+    text-align: center;
+}
+
+.dev-info h3 {
+    margin: 0;
+    font-size: 1.8em;
+    color: #9bc1ff;
+}
+
+.dev-info p {
+    margin: 10px 0;
+    color: #ffffff90;
+    font-size: 1.2em;
+}
+
+.dev-social {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.dev-social a {
+    color: #9bc1ff;
+    font-size: 1.8em;
+    transition: all 0.3s ease;
+}
+
+.dev-social a:hover {
+    color: white;
+    transform: translateY(-3px);
+}
+
+@media (max-width: 768px) {
+    .dev-container {
+        padding-top: 60px;
+    }
+    
+    .dev-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 0 15px;
+    }
+}
