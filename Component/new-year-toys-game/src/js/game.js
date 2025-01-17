@@ -52,21 +52,22 @@ class Game {
         ];
 
         this.sounds = {
-            collect: new Audio('./assets/audio/knopka-klik-odinochnyii-myagkii-priglushennyii-korotkii.mp3'),
-            start: new Audio('../assets/audio/game-boy-start.mp3'),
-            end: new Audio('../assets/audio/game-over-end-pixel-b-side.mp3')
+            collect: new Audio('./assets/sounds/collect.wav'),
+            start: new Audio('./assets/sounds/start.wav'),
+            end: new Audio('./assets/sounds/end.wav')
         };
 
         this.gameArea = document.getElementById('game-area');
         this.scoreElement = document.getElementById('score');
-        this.timeElement = document.getElementById('time');
         this.score = 0;
-        this.timeLeft = 25;
         this.isPlaying = false;
         this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
+        this.apiUrl = 'https://65a7c18d94c2c5762da6c346.mockapi.io/scores';
+        
         this.createStartButton();
         this.setupTouchEvents();
+        this.loadLeaderboard();
     }
 
     setupTouchEvents() {
@@ -79,10 +80,10 @@ class Game {
 
     createStartButton() {
         const startScreen = document.createElement('div');
-        startScreen.id = 'start-screen';
+        startScreen.className = 'start-screen';
         
         this.startButton = document.createElement('button');
-        this.startButton.id = 'start-button';
+        this.startButton.className = 'start-button';
         this.startButton.textContent = 'Почати гру';
         this.startButton.addEventListener('click', () => this.start());
         
@@ -91,14 +92,15 @@ class Game {
     }
 
     start() {
-        this.sounds.start.currentTime = 0;
-        this.sounds.start.play().catch(e => console.log('Audio error:', e));
+        if (this.sounds.start.readyState >= 2) {
+            this.sounds.start.currentTime = 0;
+            this.sounds.start.play().catch(e => console.warn('Start sound failed:', e));
+        }
+
         this.gameArea.innerHTML = '';
-        this.isPlaying = true;
         this.score = 0;
-        this.timeLeft = 25;
+        this.isPlaying = true;
         this.updateScore();
-        this.updateTimer();
         this.spawnToy();
     }
 
@@ -111,8 +113,8 @@ class Game {
         element.innerHTML = toy.svg;
         element.dataset.points = toy.points;
 
-        const maxX = this.gameArea.offsetWidth - (this.isMobile ? 50 : 40);
-        const maxY = this.gameArea.offsetHeight - (this.isMobile ? 50 : 40);
+        const maxX = this.gameArea.offsetWidth - 60;
+        const maxY = this.gameArea.offsetHeight - 60;
         element.style.left = Math.random() * maxX + 'px';
         element.style.top = Math.random() * maxY + 'px';
 
@@ -136,7 +138,11 @@ class Game {
     collectToy(element) {
         if (!this.isPlaying) return;
         
-        this.sounds.collect.play().catch(e => console.log('Audio error:', e));
+        if (this.sounds.collect.readyState >= 2) {
+            this.sounds.collect.currentTime = 0;
+            this.sounds.collect.play().catch(e => console.warn('Collect sound failed:', e));
+        }
+
         this.score += parseInt(element.dataset.points);
         this.updateScore();
         
@@ -149,26 +155,70 @@ class Game {
         this.scoreElement.textContent = this.score;
     }
 
-    updateTimer() {
-        if (this.timer) clearInterval(this.timer);
+    async loadLeaderboard() {
+        try {
+            const response = await fetch(this.apiUrl);
+            const scores = await response.json();
+            this.updateLeaderboardUI(scores);
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+        }
+    }
+
+    updateLeaderboardUI(scores) {
+        const leaderboardList = document.getElementById('leaderboard-list');
+        if (!leaderboardList) return;
+
+        leaderboardList.innerHTML = '';
         
-        this.timer = setInterval(() => {
-            this.timeLeft--;
-            this.timeElement.textContent = this.timeLeft;
-            
-            if (this.timeLeft <= 0) {
-                this.endGame();
+        scores
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 5)
+            .forEach((score, index) => {
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                item.innerHTML = `
+                    <span>${index + 1}. ${score.name}</span>
+                    <span>${score.score}</span>
+                `;
+                leaderboardList.appendChild(item);
+            });
+    }
+
+    async saveScore() {
+        if (this.score === 0) return;
+        
+        const name = prompt('Введіть ваше ім\'я:');
+        if (!name) return;
+
+        try {
+            const response = await fetch(this.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    score: this.score,
+                    timestamp: new Date().toISOString()
+                })
+            });
+
+            if (response.ok) {
+                await this.loadLeaderboard();
             }
-        }, 1000);
+        } catch (error) {
+            console.error('Error saving score:', error);
+        }
     }
 
     endGame() {
-        this.sounds.end.play().catch(e => console.log('Audio error:', e));
         this.isPlaying = false;
-        clearInterval(this.timer);
-        this.sounds.end.currentTime = 0;
-        this.sounds.end.play()
-            .catch(e => console.log('Audio play failed:', e));
+        if (this.sounds.end.readyState >= 2) {
+            this.sounds.end.currentTime = 0;
+            this.sounds.end.play().catch(e => console.warn('End sound failed:', e));
+        }
+        
         const randomWish = this.wishes[Math.floor(Math.random() * this.wishes.length)];
         
         const finalScore = document.createElement('div');
@@ -187,9 +237,10 @@ class Game {
         finalScore.appendChild(restartButton);
         this.gameArea.innerHTML = '';
         this.gameArea.appendChild(finalScore);
+
+        this.saveScore();
     }
 }
-
 
 window.onload = () => {
     new Game();
